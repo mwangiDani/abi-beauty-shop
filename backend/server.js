@@ -7,21 +7,18 @@ require('dotenv').config();
 const { Pool } = require('pg');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // ============================================
-// DATABASE CONNECTION
+// DATABASE CONNECTION (Render Managed PostgreSQL)
 // ============================================
 const pool = new Pool({
-  host: "localhost",
-  port: 5432,
-  database: "beautylux_db",
-  user: "postgres",
-  password: "2005"
+  connectionString: process.env.DATABASE_URL, // Use Render external DB URL
+  ssl: { rejectUnauthorized: false }         // Required for Render
 });
 
 pool.connect()
-  .then(() => console.log("✅ Connected to PostgreSQL"))
+  .then(() => console.log("✅ Connected to PostgreSQL on Render"))
   .catch(err => console.error("❌ Database connection error:", err));
 
 // ============================================
@@ -38,8 +35,8 @@ app.use(express.static('public'));
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
+    user: process.env.EMAIL_USER,       // Set in Render environment variables
+    pass: process.env.EMAIL_PASSWORD    // Set in Render environment variables
   }
 });
 
@@ -65,5 +62,4 @@ app.locals.validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 // ============================================
 app.listen(PORT, () => {
   console.log(`🚀 BeautyLux Server running on port ${PORT}`);
-  console.log(`📍 http://localhost:${PORT}`);
 });
