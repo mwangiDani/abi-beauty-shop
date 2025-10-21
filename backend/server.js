@@ -1,10 +1,10 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 const { Pool } = require('pg');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,8 +13,8 @@ const PORT = process.env.PORT || 5000;
 // DATABASE CONNECTION (Render Managed PostgreSQL)
 // ============================================
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // Use Render external DB URL
-  ssl: { rejectUnauthorized: false }         // Required for Render
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
 pool.connect()
@@ -27,7 +27,6 @@ pool.connect()
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static('public'));
 
 // ============================================
 // EMAIL TRANSPORTER
@@ -35,17 +34,17 @@ app.use(express.static('public'));
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER,       // Set in Render environment variables
-    pass: process.env.EMAIL_PASSWORD    // Set in Render environment variables
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
   }
 });
 
-// Make pool & transporter accessible to routes
 app.locals.pool = pool;
 app.locals.transporter = transporter;
+app.locals.validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 // ============================================
-// ROUTES
+// API ROUTES
 // ============================================
 app.use('/api/products', require('./routes/products'));
 app.use('/api/orders', require('./routes/orders'));
@@ -53,9 +52,15 @@ app.use('/api/subscribe', require('./routes/subscribe'));
 app.use('/api/contact', require('./routes/contact'));
 
 // ============================================
-// HELPER FUNCTIONS
+// SERVE FRONTEND
 // ============================================
-app.locals.validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+// Serve React build files
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+// Fallback to index.html for any non-API route
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+});
 
 // ============================================
 // START SERVER
