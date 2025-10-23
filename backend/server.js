@@ -12,7 +12,8 @@ const PORT = process.env.PORT || 3000;
 // ============================================
 // DATABASE CONNECTION (PostgreSQL)
 // ============================================
-console.log("DEBUG: DATABASE_URL =", process.env.DATABASE_URL ? process.env.DATABASE_URL.replace(/:\/\/.*:(.*)@/, "://****:****@") : "undefined");
+console.log("DEBUG: DATABASE_URL =", process.env.DATABASE_URL);
+console.log("DEBUG: DB_SSL =", process.env.DB_SSL);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
