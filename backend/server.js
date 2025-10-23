@@ -7,19 +7,24 @@ const { Pool } = require('pg');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // ============================================
-// DATABASE CONNECTION (Render Managed PostgreSQL)
+// DATABASE CONNECTION (PostgreSQL)
 // ============================================
+console.log("DEBUG: DATABASE_URL =", process.env.DATABASE_URL ? process.env.DATABASE_URL.replace(/:\/\/.*:(.*)@/, "://****:****@") : "undefined");
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
 });
 
 pool.connect()
-  .then(() => console.log("✅ Connected to PostgreSQL on Render"))
+  .then(() => console.log("✅ Connected to PostgreSQL"))
   .catch(err => console.error("❌ Database connection error:", err));
+
+// Make pool available in routes
+app.locals.pool = pool;
 
 // ============================================
 // MIDDLEWARE
@@ -39,7 +44,6 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-app.locals.pool = pool;
 app.locals.transporter = transporter;
 app.locals.validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -52,12 +56,11 @@ app.use('/api/subscribe', require('./routes/subscribe'));
 app.use('/api/contact', require('./routes/contact'));
 
 // ============================================
-// SERVE FRONTEND
+// SERVE FRONTEND (React)
 // ============================================
-// Serve React build files
 app.use(express.static(path.join(__dirname, '../frontend/build')));
 
-// Fallback to index.html for any non-API route
+// Fallback to index.html for non-API routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
 });
